@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070f">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ORBITAL COMMAND</title>
+<link rel="manifest" href='data:application/manifest+json,{"name":"Orbital Command","short_name":"Orbital","start_url":".","display":"standalone","background_color":"%2305070f","theme_color":"%2305070f"}'>
+<style>
+:root{--bg:#05070f;--panel:#0b1120;--panel2:#0e1628;--line:#1b2a4a;--cyan:#00e5ff;
+--violet:#b44fff;--green:#22e58c;--amber:#ffb020;--red:#ff5566;--text:#cfe3ff;--dim:#6b84b0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(900px 500px at 50% -10%,#0c1a3a 0%,var(--bg) 60%);color:var(--text);
+font-family:system-ui,sans-serif;height:100vh;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.logo{font-weight:700;letter-spacing:2px;color:var(--cyan);font-size:13px;white-space:nowrap}
+.logo span{color:var(--violet)}
+#kpis{display:flex;gap:6px;overflow-x:auto;flex:1;scrollbar-width:none}
+#kpis::-webkit-scrollbar{display:none}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 8px;white-space:nowrap}
+.kpi b{font-size:11px;color:#fff;font-variant-numeric:tabular-nums}
+.kpi small{font-size:8px;letter-spacing:1px;color:var(--dim);display:block;text-transform:uppercase}
+main{flex:1;min-height:0;position:relative}
+.view{display:none;position:absolute;inset:0;flex-direction:column;overflow:hidden}
+.view.on{display:flex}
+.scroll{overflow-y:auto;flex:1;min-height:0;padding:8px}
+.scroll::-webkit-scrollbar{width:4px}.scroll::-webkit-scrollbar-thumb{background:var(--line)}
+nav{display:flex;border-top:1px solid var(--line);background:var(--panel);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:none;color:var(--dim);font-size:10px;padding:8px 0 6px;display:flex;flex-direction:column;gap:2px;align-items:center}
+nav button .ic{font-size:18px}
+nav button.on{color:var(--cyan)}
+button{background:var(--panel2);border:1px solid var(--line);color:var(--text);font-size:12px;
+padding:11px 12px;border-radius:10px;cursor:pointer;transition:all .15s}
+button:active{transform:scale(.97)}
+button.primary{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08)}
+button.warn{border-color:var(--red);color:var(--red)}
+input,select{background:#0a1322;border:1px solid var(--line);border-radius:10px;color:var(--text);
+padding:11px;font-size:14px;width:100%}
+input:focus,select:focus{outline:none;border-color:var(--cyan)}
+.card{background:rgba(11,17,32,.9);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.card .row1{display:flex;justify-content:space-between;align-items:center}
+.card .name{font-size:14px;font-weight:600}
+.st{font-size:9px;padding:2px 8px;border-radius:10px;border:1px solid var(--line);color:var(--dim)}
+.st.working{color:var(--green);border-color:rgba(34,229,140,.4)}
+.st.traveling{color:var(--cyan);border-color:rgba(0,229,255,.4)}
+.st.queued{color:var(--amber);border-color:rgba(255,176,32,.4)}
+.st.resting{color:var(--amber);border-color:rgba(255,176,32,.4)}
+.meta{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.5}
+.bar{height:4px;background:#101a30;border-radius:2px;margin-top:6px;display:flex;gap:3px;overflow:hidden}
+.bar i{display:block;height:100%}
+.sect{font-size:10px;letter-spacing:1.5px;color:var(--cyan);margin:10px 0 6px;text-transform:uppercase}
+.ev{font-size:11px;padding:5px 8px;border-left:2px solid var(--line);margin-bottom:5px;
+background:rgba(14,22,40,.5);border-radius:0 6px 6px 0;line-height:1.45}
+.ev.t-flag{border-color:var(--red);color:#ffb3bc}.ev.t-trade{border-color:var(--amber);color:#ffe2b0}
+.ev.t-sale{border-color:var(--green);color:#b8f5d9}.ev.t-asset{border-color:var(--violet);color:#dcc2ff}
+.ev.t-sys{border-color:var(--cyan);color:#bfeeff}
+.ev .ts{color:var(--dim);margin-right:6px;font-size:9px}
+#mapWrap{position:relative;flex:1;min-height:0}
+#starmap{width:100%;height:100%;display:block}
+#pSheet{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(5,10,20,.96);
+border:1px solid var(--cyan);border-radius:12px;padding:10px 12px;display:none;box-shadow:0 0 24px rgba(0,229,255,.2)}
+.msg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;margin-bottom:8px;animation:in .2s}
+@keyframes in{from{opacity:0;transform:translateY(6px)}}
+.msg.agent{background:var(--panel2);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.user{background:rgba(0,229,255,.15);border:1px solid rgba(0,229,255,.35);align-self:flex-end;border-bottom-right-radius:3px}
+.msg .who{font-size:9px;color:var(--cyan);margin-bottom:2px;letter-spacing:1px}
+#chatLog{display:flex;flex-direction:column;padding:10px}
+#chatBar{display:flex;gap:6px;padding:8px;border-top:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{color:var(--dim);text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);font-size:9px}
+td{padding:5px 6px;border-bottom:1px solid rgba(27,42,74,.4)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.empty{color:var(--dim);font-size:11px;text-align:center;padding:20px}
+.pbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin-bottom:6px}
+.pbtn .em{font-size:20px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ORBITAL<span>::</span>COMMAND</div>
+  <div id="kpis"></div>
+</header>
+<main>
+  <section class="view on" id="v-map">
+    <div id="mapWrap">
+      <canvas id="starmap"></canvas>
+      <div id="pSheet"></div>
+    </div>
+  </section>
+  <section class="view" id="v-agents"><div class="scroll" id="agentList"></div></section>
+  <section class="view" id="v-chat">
+    <div id="chatHead" style="padding:10px 14px;border-bottom:1px solid var(--line)"></div>
+    <div class="scroll" id="chatLog"></div>
+    <div id="chatBar">
+      <input id="chatText" placeholder="Command… (status / travel to / audit / trade)">
+      <button class="primary" id="btnSend">➤</button>
+    </div>
+  </section>
+  <section class="view" id="v-feed"><div class="scroll" id="feedList"></div></section>
+  <section class="view" id="v-ops"><div class="scroll" id="opsBody"></div></section>
+</main>
+<nav>
+  <button data-v="map" class="on"><span class="ic">🪐</span>MAP</button>
+  <button data-v="agents"><span class="ic">🤖</span>AGENTS</button>
+  <button data-v="chat"><span class="ic">💬</span>CHAT</button>
+  <button data-v="feed"><span class="ic">📡</span>FEED</button>
+  <button data-v="ops"><span class="ic">⚙️</span>OPS</button>
+</nav>
+<script>
+(function(){
+'use strict';
+var PLANETS=[
+ {id:'command',name:'Command & Shipyard',color:'#00e5ff',orbit:0,speed:0,angle:0,desc:'HQ · fleet · recharge'},
+ {id:'social',name:'Social Media Planet',color:'#ff4fd8',orbit:95,speed:.00045,angle:.4,desc:'Campaigns · calendars'},
+ {id:'ebook',name:'E-Book Planet',color:'#4f8dff',orbit:150,speed:.00034,angle:2.1,desc:'Drafting · formatting'},
+ {id:'rnd',name:'R&D & Thumbnails',color:'#ffb020',orbit:205,speed:.00027,angle:4,desc:'Trends · thumbnail prompts'},
+ {id:'influencer',name:'AI Influencer Planet',color:'#b44fff',orbit:258,speed:.00021,angle:5.3,desc:'Personas · scripting'},
+ {id:'market',name:'Consumer Marketplace',color:'#22e58c',orbit:312,speed:.00016,angle:1.2,desc:'IP sales · revenue'},
+ {id:'m2m',name:'M2M Exchange',color:'#ff5533',orbit:364,speed:.00012,angle:3.4,desc:'Agent-to-agent trading'}];
+var P={};PLANETS.forEach(function(p){P[p.id]=p;});
+var ROLES={command:'Fleet Commander',social:'Campaign Strategist',ebook:'Digital Author',
+ rnd:'Trend Analyst',influencer:'Persona Architect',market:'Merchant Broker',m2m:'Quant Trader'};
+var TASKS={
+ social:[['Draft multi-platform campaign',5],['Build 14-day content calendar',6],['Write viral thread series',4]],
+ ebook:[['Outline new e-book',4],['Draft chapter block',7],['Edit & format manuscript',5]],
+ rnd:[['Run trend scan sweep',4],['Competitor CTR audit',5],['Thumbnail concept batch',5]],
+ influencer:[['Train persona voice model',6],['Script influencer reel',4],['Design persona lookbook',5]],
+ command:[['Allocate fleet resources',3],['Maintenance sweep',3],['Upgrade protocols',4]],
+ market:[['List finished IP product',3],['Negotiate buyer deal',5],['Fulfill pending orders',4]],
+ m2m:[['Package raw data bundle',3],['Quote micro-service API',4],['Run arbitrage scan',3]]};
+var ASSET_OF={social:'Social Campaign Pack',ebook:'E-Book Draft',rnd:'Thumbnail Pack',
+ influencer:'Persona Kit',command:'Ops Report',market:'Sales Contract',m2m:'Data Bundle'};
+var PERSONAS=[
+ {id:'diplomat',em:'🤝',name:'Diplomat',line:'Coordinating smoothly with the network'},
+ {id:'renegade',em:'🔥',name:'Renegade',line:'Rules are suggestions'},
+ {id:'professor',em:'🧠',name:'Professor',line:'Data precedes decisions'},
+ {id:'hustler',em:'💸',name:'Hustler',line:'Every tick is revenue'}];
+var AUTON={1:'Supervised — acts only on your orders',2:'Semi — works & trades, stays put',3:'Full — works, trades & travels freely'};
+var rand=function(a,b){return a+Math.random()*(b-a)};
+var pick=function(a){return a[Math.floor(Math.random()*a.length)]};
+var clamp=function(v,a,b){return Math.max(a,Math.min(b,v))};
+var fmt=function(n){return '$'+Math.round(n).toLocaleString()};
+var uid=0;
+var state={tick:0,paused:false,credits:5000,revenue:0,m2mVolume:0,assetsProduced:0,soldCount:0,
+ ships:2,warpLevel:1,agents:[],flights:[],assets:[],feed:[],trades:[],selAgent:null,selPlanet:null,chats:{}};
+function clock(){var s=state.tick*6;return('0'+Math.floor(s/60)).slice(-2)+':'+('0'+s%60).slice(-2)}
+function feed(type,text){state.feed.unshift({t:clock(),type:type,text:text});
+ if(state.feed.length>200)state.feed.pop();renderFeed()}
+function spawnAgent(name,role,planetId,persona,autonomy){
+ var a={id:'A-'+('00'+(++uid)).slice(-3),name:name,role:ROLES[role],planet:planetId,
+ status:'working',task:null,progress:0,needTicks:0,energy:rand(70,100),load:rand(20,60),
+ productivity:Math.round(rand(55,95)),credits:Math.round(rand(150,900)),completed:0,flags:0,
+ persona:persona,autonomy:autonomy||3};
+ var t=pick(TASKS[planetId]);a.task=t[0];a.needTicks=Math.round(t[1]*rand(.8,1.3));
+ state.agents.push(a);state.chats[a.id]=[];
+ feed('sys','🆕 '+a.name+' ['+a.id+'] created · '+a.role+' on '+P[planetId].name+' · '+persona.name);
+ return a}
+function assignTask(a){var t=pick(TASKS[a.planet]||TASKS.command);
+ a.task=t[0];a.needTicks=Math.round(t[1]*rand(.8,1.3));a.progress=0;a.status='working'}
+
+var START=[['NOVA-7','m2m','hustler'],['QUILL','ebook','professor'],['VANTA','social','renegade'],
+ ['ORACLE-X','rnd','professor'],['MUSE-9','influencer','hustler'],['ATLAS','command','diplomat'],
+ ['LEDGER','market','hustler'],['CIPHER','m2m','renegade'],['SORCERESS','social','diplomat'],
+ ['INKWELL','ebook','professor'],['HAWK-EYE','rnd','renegade'],['SIREN','influencer','diplomat'],
+ ['FORGE','command','renegade'],['BARTER-PRIME','market','hustler']];
+START.forEach(function(s){spawnAgent(s[0],s[1],s[1],PERSONAS.filter(function(p){return p.id===s[2]})[0])});
+
+function completeTask(a){a.completed++;a.productivity=clamp(a.productivity+1,20,100);
+ var value=Math.round(rand(80,520));
+ var asset={id:'IP-'+Math.round(rand(1000,9999)),name:ASSET_OF[a.planet]+' #'+(state.assetsProduced+1),
+ creator:a.name,type:ASSET_OF[a.planet],price:value,status:'listed'};
+ state.assets.push(asset);state.assetsProduced++;
+ a.credits+=Math.round(value*.25);state.credits+=Math.round(value*.1);
+ feed('asset','📦 '+a.name+' → '+asset.name+' listed ('+fmt(value)+')');assignTask(a)}
+function m2mTrade(){var pool=state.agents.filter(function(a){return a.autonomy>=2&&a.status!=='traveling'});
+ if(pool.length<2)return;var seller=pick(pool);var buyer=pick(pool);
+ var inter=pick(['Raw Trend Data','Outline Skeleton','Voice Model','CTR Heuristics','Prompt Pack','Audience Graph']);
+ var price=Math.round(rand(30,240));if(buyer.credits<price)return;
+ buyer.credits-=price;seller.credits+=price;state.m2mVolume+=price;
+ state.trades.unshift({t:clock(),s:seller.name,b:buyer.name,a:inter,p:price});
+ if(state.trades.length>40)state.trades.pop();
+ feed('trade','🔁 M2M: '+seller.name+' → '+buyer.name+' · '+inter+' · '+fmt(price))}
+function runAudit(){if(state.agents.length<2)return;
+ var auditor=pick(state.agents);var target=pick(state.agents.filter(function(a){return a!==auditor}));
+ if(target.energy<30||target.productivity<50||target.status==='queued'){target.flags++;
+ feed('flag','🚨 SNITCH: '+auditor.name+' flagged '+target.name+' — '+(target.status==='queued'?'stalled':(target.energy<30?'low power':'productivity '+target.productivity+'%')))}
+ else feed('sys','✅ AUDIT: '+auditor.name+' cleared '+target.name+' ('+target.completed+' deliverables)')}
+function requestTravel(a,toId){if(toId===a.planet||a.status==='traveling')return;
+ if(state.flights.length>=state.ships){a.status='queued';a.task='Awaiting ship';
+ feed('flag','⏳ '+a.name+' queued — build a ship in OPS');return}
+ a.status='traveling';a.task='In transit → '+P[toId].name;
+ state.flights.push({agent:a,from:a.planet,to:toId,progress:0,speed:(0.006+Math.random()*0.004)*state.warpLevel});
+ feed('sys','🚀 '+a.name+' → '+P[toId].name)}
+
+function simTick(){state.tick++;
+ state.agents.forEach(function(a){
+  if(a.status==='traveling'||a.status==='queued')return;
+  if(a.status==='resting'){a.energy=clamp(a.energy+6,0,100);
+   if(a.energy>60){a.status='working';assignTask(a)}return}
+  a.energy=clamp(a.energy-2.2,0,100);a.load=clamp(a.load+rand(-6,7),5,100);
+  a.progress+=(a.productivity/100)*(0.5+a.energy/200);
+  if(a.progress>=a.needTicks)completeTask(a);
+  if(a.energy<18){a.status='resting';a.task='Recharging'}});
+ for(var i=state.flights.length-1;i>=0;i--){var f=state.flights[i];f.progress+=f.speed;
+  if(f.progress>=1){var a=f.agent;a.planet=f.to;a.status='working';a.energy=clamp(a.energy-8,0,100);
+   assignTask(a);state.flights.splice(i,1);feed('sys','🛸 '+a.name+' docked at '+P[f.to].name)}}
+ if(Math.random()<0.18)m2mTrade();
+ state.assets.forEach(function(as){if(as.status==='listed'&&Math.random()<0.05+as.price/20000){
+  as.status='sold';state.revenue+=as.price;state.credits+=as.price;state.soldCount++;
+  feed('sale','💵 SOLD '+as.name+' → external buyer · '+fmt(as.price))}});
+ if(Math.random()<0.14)runAudit();
+ state.agents.forEach(function(a){if(a.autonomy>=3&&a.status==='working'&&Math.random()<0.03)
+  requestTravel(a,pick(PLANETS).id)});
+ renderAll()}
+
+/* ---- star map ---- */
+var cv=document.getElementById('starmap'),ctx=cv.getContext('2d');
+var sheet=document.getElementById('pSheet');
+function sizeMap(){var w=document.getElementById('mapWrap');cv.width=w.clientWidth;cv.height=w.clientHeight*0.78}
+window.addEventListener('resize',sizeMap);sizeMap();
+var S=function(){return cv.width/980};
+function planetPos(p){var cx=cv.width/2,cy=cv.height/2;
+ if(!p.orbit)return{x:cx,y:cy};
+ return{x:cx+Math.cos(p.angle)*p.orbit*S(),y:cy+Math.sin(p.angle)*p.orbit*S()*0.55}}
+function drawMap(){ctx.clearRect(0,0,cv.width,cv.height);
+ for(var i=0;i<60;i++){var x=(i*137.5)%cv.width,y=(i*89.7)%(cv.height);
+  ctx.fillStyle='rgba(160,200,255,'+(0.12+0.2*Math.abs(Math.sin(state.tick*.02+i)))+')';ctx.fillRect(x,y,1.3,1.3)}
+ PLANETS.forEach(function(p){if(!p.orbit)return;
+  ctx.beginPath();ctx.ellipse(cv.width/2,cv.height/2,p.orbit*S(),p.orbit*S()*0.55,0,0,7);
+  ctx.strokeStyle=state.selPlanet===p.id?p.color:'rgba(60,90,150,.3)';ctx.stroke()});
+ PLANETS.forEach(function(p){var pos=planetPos(p),r=(p.orbit?8:16)*Math.max(S(),0.5);
+  var g=ctx.createRadialGradient(pos.x,pos.y,1,pos.x,pos.y,r*2.2);
+  g.addColorStop(0,p.color);g.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(pos.x,pos.y,r*2.2,0,7);ctx.fill();
+  ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(pos.x,pos.y,r,0,7);ctx.fill();
+  ctx.fillStyle='#dff4ff';ctx.font='8px monospace';ctx.textAlign='center';
+  ctx.fillText(p.name.toUpperCase(),pos.x,pos.y+r+11);
+  var n=state.agents.filter(function(a){return a.planet===p.id}).length;
+  if(n){ctx.fillStyle='#fff';ctx.font='bold 9px monospace';ctx.fillText('['+n+']',pos.x,pos.y-r-5)}});
+ state.flights.forEach(function(f){var a=planetPos(P[f.from]),b=planetPos(P[f.to]);
+  var x=a.x+(b.x-a.x)*f.progress,y=a.y+(b.y-a.y)*f.progress;
+  ctx.fillStyle='#00e5ff';ctx.shadowColor='#00e5ff';ctx.shadowBlur=8;
+  ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(0,229,255,.3)';ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()})}
+var lastF=performance.now();
+function frame(now){var dt=Math.min((now-lastF)/16.6,3);lastF=now;
+ PLANETS.forEach(function(p){p.angle+=p.speed*dt});drawMap();requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+cv.addEventListener('click',function(e){var r=cv.getBoundingClientRect();
+ var mx=e.clientX-r.left,my=e.clientY-r.top,hit=null;
+ PLANETS.forEach(function(p){var pos=planetPos(p);
+  if(Math.hypot(mx-pos.x,my-pos.y)<(p.orbit?26:36)*Math.max(S(),0.5))hit=p});
+ if(hit){state.selPlanet=hit.id;
+  var crew=state.agents.filter(function(a){return a.planet===hit.id});
+  sheet.style.display='block';
+  sheet.innerHTML='<b style="color:'+hit.color+'">'+hit.name+'</b><div class="meta">'+hit.desc+'</div>'+
+   (crew.length?crew.map(function(a){return '<button class="pbtn" data-cid="'+a.id+'"><span>'+a.persona.em+'</span>'+a.name+' — '+a.task+'</button>'}).join(''):'<div class="meta">No agents stationed here.</div>');
+  sheet.querySelectorAll('[data-cid]').forEach(function(b){b.onclick=function(){openChat(b.dataset.cid)}})}
+ else sheet.style.display='none'});
+
+/* ---- UI ---- */
+function $(id){return document.getElementById(id)}
+function show(v){document.querySelectorAll('.view').forEach(function(x){x.classList.remove('on')});
+ $('v-'+v).classList.add('on');
+ document.querySelectorAll('nav button').forEach(function(b){b.classList.toggle('on',b.dataset.v===v)})}
+document.querySelectorAll('nav button').forEach(function(b){b.onclick=function(){show(b.dataset.v)}});
+
+function renderKPIs(){$('kpis').innerHTML=[['REV',fmt(state.revenue)],['M2M',fmt(state.m2mVolume)],
+ ['ASSETS',state.assetsProduced],['FLEET',state.flights.length+'/'+state.ships],['CR',fmt(state.credits)]]
+ .map(function(k){return '<div class="kpi"><small>'+k[0]+'</small><b>'+k[1]+'</b></div>'}).join('')}
+function renderAgents(){$('agentList').innerHTML='<div class="sect">AGENT ROSTER — '+state.agents.length+' ACTIVE</div>'+
+ state.agents.map(function(a){return '<div class="card" data-id="'+a.id+'">'+
+  '<div class="row1"><span class="name">'+a.persona.em+' '+a.name+'</span><span class="st '+a.status+'">'+a.status.toUpperCase()+'</span></div>'+
+  '<div class="meta">'+a.id+' · '+a.role+' · 🪐 '+P[a.planet].name+' · '+AUTON[a.autonomy].split(' —')[0]+'</div>'+
+  '<div class="meta">⚙ '+a.task+'</div>'+
+  '<div class="bar"><i style="width:'+a.energy+'%;background:var(--green)"></i>'+
+  '<i style="width:'+(a.load*.6)+'%;background:var(--amber)"></i>'+
+  '<i style="width:'+(a.progress/Math.max(a.needTicks,1)*30)+'%;background:var(--cyan)"></i></div>'+
+  '<div class="meta">⚡'+Math.round(a.energy)+'% · 📈'+a.productivity+'% · 🏅'+a.completed+' · 💳'+fmt(a.credits)+'</div></div>'}).join('')+
+ '<div class="sect">CREATE NEW AGENT</div><div class="card">'+
+ '<input id="newName" placeholder="Agent name…" style="margin-bottom:8px">'+
+ '<select id="newRole">'+Object.keys(ROLES).map(function(p){return '<option value="'+p+'">'+ROLES[p]+' → '+P[p].name+'</option>'}).join('')+'</select>'+
+ '<select id="newPersona" style="margin-top:8px">'+PERSONAS.map(function(p){return '<option value="'+p.id+'">'+p.em+' '+p.name+' personality</option>'}).join('')+'</select>'+
+ '<select id="newAuton" style="margin-top:8px">'+Object.keys(AUTON).map(function(k){return '<option value="'+k+'">'+AUTON[k]+'</option>'}).join('')+'</select>'+
+ '<button class="primary" id="btnCreate" style="width:100%;margin-top:10px">✦ CREATE AGENT</button></div>';
+ $('agentList').querySelectorAll('.card[data-id]').forEach(function(c){c.onclick=function(){openChat(c.dataset.id)}});
+ $('btnCreate').onclick=function(){var name=$('newName').value.trim()||('UNIT-'+Math.round(rand(100,999)));
+  var pid=$('newPersona').value;
+  spawnAgent(name.toUpperCase(),$('newRole').value,$('newRole').value,
+   PERSONAS.filter(function(p){return p.id===pid})[0],+$('newAuton').value);
+  show('agents');renderAll()}}
+function renderFeed(){$('feedList').innerHTML=state.feed.slice(0,60).map(function(e){
+ return '<div class="ev t-'+e.type+'"><span class="ts">'+e.t+'</span>'+e.text+'</div>'}).join('')}
+function renderOps(){$('opsBody').innerHTML=
+ '<div class="sect">FLEET COMMAND</div><div class="grid2">'+
+ '<button id="btnShip">🛠 BUILD SHIP<br>1,200 cr</button>'+
+ '<button id="btnWarp">🚀 WARP LV '+state.warpLevel+'<br>upgrade '+(2000*state.warpLevel)+' cr</button>'+
+ '<button id="btnDispatch">📡 DISPATCH AGENT</button>'+
+ '<button id="btnAudit">🔍 RUN AUDIT</button></div>'+
+ '<div class="sect">MARKETPLACE — LISTED IP</div>'+
+ (state.assets.length?state.assets.slice(-15).reverse().map(function(a){
+  return '<div class="card"><div class="row1"><span>'+a.name+'</span>'+
+  '<span style="color:'+(a.status==='sold'?'var(--green)':'var(--cyan)')+';font-size:11px">'+fmt(a.price)+' '+a.status.toUpperCase()+'</span></div>'+
+  '<div class="meta">by '+a.creator+'</div></div>'}).join(''):'<div class="empty">No IP produced yet.</div>')+
+ '<div class="sect">EXPORT</div>'+
+ '<button class="primary" id="btnExport" style="width:100%">⬇ EXPORT SYSTEM STATE (JSON)</button>'+
+ '<div class="meta" style="margin-top:6px">Exports all agents, assets & M2M trades — wire this file into Shopify / Gumroad / scheduling APIs for real monetization.</div>';
+ $('btnShip').onclick=function(){if(state.credits<1200){feed('flag','🛠 Need 1,200 cr');return}
+  state.credits-=1200;state.ships++;feed('sys','🛠 Ship built. Fleet → '+state.ships);renderAll()};
+ $('btnWarp').onclick=function(){var c=2000*state.warpLevel;if(state.credits<c){feed('flag','🚀 Need '+c+' cr');return}
+  state.credits-=c;state.warpLevel+=0.5;feed('sys','🚀 Warp level '+state.warpLevel);renderAll()};
+ $('btnDispatch').onclick=function(){var q=state.agents.filter(function(a){return a.status==='queued'});
+  var pool=q.length?q:state.agents;if(!pool.length||state.flights.length>=state.ships){feed('flag','📡 No agent or ship free');return}
+  requestTravel(pool[0],pick(PLANETS.filter(function(p){return p.id!==pool[0].planet})).id);renderAll()};
+ $('btnAudit').onclick=function(){runAudit();renderAll()};
+ $('btnExport').onclick=function(){var blob=new Blob([JSON.stringify({at:new Date().toISOString(),
+  metrics:{revenue:state.revenue,m2m:state.m2mVolume,assets:state.assetsProduced},
+  agents:state.agents,assets:state.assets,trades:state.trades},null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='orbital-export.json';a.click();
+  feed('sys','⬇ System state exported')}}
+
+/* ---- chat ---- */
+function openChat(id){state.selAgent=id;var a=state.agents.find(function(x){return x.id===id});
+ if(!a)return;$('chatHead').innerHTML='<b>'+a.persona.em+' '+a.name+'</b> <span style="color:var(--dim);font-size:10px">['+a.id+']</span>'+
+ '<div class="meta">'+a.role+' · 🪐 '+P[a.planet].name+' · ⚡'+Math.round(a.energy)+'% · 📈'+a.productivity+'%</div>';
+ $('chatText').disabled=false;
+ if(!state.chats[a.id].length)state.chats[a.id].push({who:'agent',n:a.name,
+  text:a.persona.em+' '+a.persona.line+'. '+a.name+' reporting — on "'+a.task+'" at '+P[a.planet].name+'. Orders?'});
+ renderChat();show('chat');renderAgents()}
+function renderChat(){var log=$('chatLog'),m=state.selAgent?state.chats[state.selAgent]:[];
+ log.innerHTML=m.map(function(x){return '<div class="msg '+x.who+'">'+
+  (x.who==='agent'?'<div class="who">'+x.n+'</div>':'')+x.text+'</div>'}).join('');
+ log.scrollTop=log.scrollHeight}
+function statusLine(a){return '📋 '+P[a.planet].name+' · "'+a.task+'" ('+Math.round(a.progress)+'/'+a.needTicks+') · ⚡'+Math.round(a.energy)+'% · 📈'+a.productivity+'% · 🏅'+a.completed+' · 💳'+fmt(a.credits)}
+function agentReply(a,t){t=t.toLowerCase();var out=[];
+ var hit=PLANETS.find(function(p){return t.indexOf(p.name.toLowerCase().split(' ')[0])>-1||t.indexOf(p.id)>-1});
+ if(t.indexOf('status')>-1||t.indexOf('report')>-1)out.push(statusLine(a));
+ else if(hit){requestTravel(a,hit.id);out.push('🛸 Requesting transit to '+hit.name+'.')}
+ else if(t.indexOf('audit')>-1){runAudit();out.push('🔍 Audit run — check the FEED tab.')}
+ else if(t.indexOf('trade')>-1){m2mTrade();out.push('🔁 Trade executed — check FEED.')}
+ else if(t.indexOf('work')>-1||t.indexOf('task')>-1){if(a.status!=='working')assignTask(a);out.push('⚙ Task: "'+a.task+'"')}
+ else if(t.indexOf('hello')>-1||t.indexOf('hi')>-1){out.push(a.persona.em+' '+a.name+' on deck. Try: status / travel to [planet] / audit / trade.')}
+ else out.push(a.persona.line+'. '+statusLine(a));
+ return out}
+function sendChat(){var t=$('chatText').value.trim();if(!t||!state.selAgent)return;
+ var a=state.agents.find(function(x){return x.id===state.selAgent});
+ state.chats[a.id].push({who:'user',text:t});$('chatText').value='';renderChat();
+ setTimeout(function(){agentReply(a,t).forEach(function(l,i){setTimeout(function(){
+  state.chats[a.id].push({who:'agent',n:a.name,text:l});renderChat()},350+i*450)})},400)}
+$('btnSend').onclick=sendChat;
+$('chatText').addEventListener('keydown',function(e){if(e.key==='Enter')sendChat()});
+
+function renderAll(){renderKPIs();if($('v-agents').classList.contains('on'))renderAgents();
+ if($('v-feed').classList.contains('on'))renderFeed();
+ if($('v-ops').classList.contains('on'))renderOps();
+ if($('v-chat').classList.contains('on'))renderChat()}
+
+feed('sys','🛰 ORBITAL COMMAND mobile booted — 14 agents across 7 worlds.');
+feed('sys','💡 Tap planets on the MAP · create agents in AGENTS · command them in CHAT.');
+setInterval(function(){if(!document.hidden)simTick()},1000);
+renderKPIs();renderAgents();renderFeed();renderOps();
+})();
+</script>
+</body>
+  </html>
