@@ -109,7 +109,8 @@ td{padding:5px 6px;border-bottom:1px solid rgba(27,42,74,.4)}
 </nav>
 <script>
 (function(){
-'use strict';const GEMINI_API_KEY ="AQ.Ab8RN6JTVJ5TIIiGYh0VVWzSHjTUcno6d94ZPvwXi6mnSe9kMg"
+'use strict';const GEMINI_API_KEY =localStorage.getItem('OC_API_KEY') || '';
+
 var PLANETS=[
  {id:'command',name:'Command & Shipyard',color:'#00e5ff',orbit:0,speed:0,angle:0,desc:'HQ · fleet · recharge'},
  {id:'social',name:'Social Media Planet',color:'#ff4fd8',orbit:95,speed:.00045,angle:.4,desc:'Campaigns · calendars'},
