@@ -374,7 +374,9 @@ function renderAll(){renderKPIs();if($('v-agents').classList.contains('on'))rend
 
 feed('sys','🛰 ORBITAL COMMAND mobile booted — 14 agents across 7 worlds.');
 feed('sys','💡 Tap planets on the MAP · create agents in AGENTS · command them in CHAT.');
-setInterval(function(){if(!document.hidden)simTick()},1000);
+if (!localStorage.getItem('OC_API_KEY')) { localStorage.setItem('OC_API_KEY', prompt('Enter your GEMINI_API_KEY:')); }
+
+  setInterval(function(){if(!document.hidden)simTick()},1000);
 renderKPIs();renderAgents();renderFeed();renderOps();
 })();
 </script>
